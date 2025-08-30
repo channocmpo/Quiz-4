@@ -17,6 +17,7 @@
                 <!-- Posts Feed -->
                 {% for post in object_list %}
                     <div class="card mb-4 shadow-sm position-relative">
+                    {% if post.slug %}
                         <a href="{% url 'posts:post-detail' post.slug %}" class="text-decoration-none text-dark">
                             <!-- Post Header -->
                             <div class="card-header bg-white border-0 pt-3">
@@ -57,6 +58,7 @@
                                 </div>
                             </div>
                         </a>
+                    {% endif %}
                     </div>
                 {% empty %}
                     <div class="card shadow-sm">

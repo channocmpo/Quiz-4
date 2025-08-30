@@ -12,6 +12,7 @@ def upload_image_path(instance, filename):
     return f"post_images/{new_filename}/{final_filename}".format(new_filename=new_filename, final_filename=final_filename)
 # Create your models here.
 class Post(models.Model):
+    title = models.CharField(max_length=200, blank=True)
     user = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE)
     content = models.TextField()
     image = models.ImageField(upload_to=upload_image_path, blank=True, null=True)

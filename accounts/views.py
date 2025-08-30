@@ -89,7 +89,36 @@ def signin_view(request):
     return render(request, 'auth/signin.html')
 
 def profile_create_view(request):
-    pass
+    if not request.user.is_authenticated:
+        messages.error(request, 'You are not logged in.')
+        return redirect('auth:signin')
+
+    if not Profile.objects.filter(user=request.user).exists():
+        if request.method == 'POST':
+            first_name = request.POST.get('first_name', '').strip()
+            last_name = request.POST.get('last_name', '').strip()
+            bio = request.POST.get('bio', '').strip()
+            profile_picture = request.FILES.get('profile_picture')
+
+            if not all([first_name, last_name, profile_picture]):
+                messages.error(request, 'All fields are required.')
+                return render(request, 'auth/profile_create.html', {
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'profile_picture': profile_picture,
+                })
+
+            profile = Profile.objects.create(
+                user=request.user,
+                first_name=first_name,
+                last_name=last_name,
+                bio=bio,
+                profile_picture=profile_picture,
+            )
+            messages.success(request, 'Profile created successfully!')
+            return redirect('auth:profile_view')
+
+    return render(request, 'auth/profile_create.html')
 def profile_view(request):
     if not request.user.is_authenticated:
         messages.error(request, 'Please sign in first.')

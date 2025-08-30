@@ -9,7 +9,9 @@ def get_filename_ext(filepath):
     return name, ext
 
 def upload_image_path(instance, filename):
-    pass
+    name, ext = os.path.splitext(filename)
+    new_filename = f"{random.randint(100000, 999999)}{ext}"
+    return f"profile_pictures/{instance.user.username}/{new_filename}"
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username, password=None, is_active=True, is_staff=False, is_admin=False):

@@ -10,14 +10,22 @@ from .models import Job, JobApplicant
 # Create your views here.
 
 class JobCreateView(CreateView):
-    pass
+    model = Job
+    form_class = JobForm
+    template_name = 'jobs/job_create.html'
+    success_url = reverse_lazy('jobs:job_list_view')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request, 'Job created successfully!')
+        return super().form_valid(form)
 def job_list_view(request):
     jobs = Job.objects.all()
     query = request.GET.get('q', None)
     if query is not None:
         jobs = jobs.filter(
-            Q(job_title__icontains=query),
-            Q(job_description__icontains=query),
+            Q(job_title__icontains=query) |
+            Q(job_description__icontains=query) |
             Q(location__icontains=query)
         )
     context = {
