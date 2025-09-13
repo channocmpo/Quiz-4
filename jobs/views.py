@@ -7,8 +7,6 @@ from django.views.generic.edit import CreateView
 from .forms import JobForm
 from .models import Job, JobApplicant
 
-# Create your views here.
-
 class JobCreateView(CreateView):
     model = Job
     form_class = JobForm
@@ -17,21 +15,29 @@ class JobCreateView(CreateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
-        messages.success(self.request, 'Job created successfully!')
         return super().form_valid(form)
+
+    def handle_no_permission(self):
+        return redirect('jobs:job_list_view')
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+
 def job_list_view(request):
     jobs = Job.objects.all()
     query = request.GET.get('q', None)
     if query is not None:
         jobs = jobs.filter(
-            Q(job_title__icontains=query) |
-            Q(job_description__icontains=query) |
+            Q(job_title__icontains=query),
+            Q(job_description__icontains=query),
             Q(location__icontains=query)
         )
     context = {
         'jobs': jobs,
     }
-    return render(request, 'jobs/job_list.html')
+    return render(request, 'jobs/job_list.html', context)
+
 
 def job_detail_view(request, pk):
     try:
@@ -42,10 +48,10 @@ def job_detail_view(request, pk):
             return render(request, 'auth/401.html', status=401)
     except Job.DoesNotExist:
         return render(request, 'auth/404.html', status=404)
-        
+
     applicants = JobApplicant.objects.filter(job=job)
     has_applied = JobApplicant.objects.filter(job=job, user=user).exists() if user.is_authenticated else False
-    
+
     context = {
         'job': job,
         'user': user,
@@ -53,6 +59,25 @@ def job_detail_view(request, pk):
         'has_applied': has_applied,
     }
     return render(request, 'jobs/job_detail.html', context)
+
+
+def job_apply(request, pk):
+    job = get_object_or_404(Job, pk=pk)
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return render(request, 'auth/401.html', status=401)
+        resume = request.FILES.get('resume')
+
+        if not resume:
+            messages.error(request, 'Please upload your resume.')
+            return render(request, 'jobs/job_apply.html', {'job': job})
+
+        JobApplicant.objects.create(job=job, user=request.user, resume=resume)
+        messages.success(request, 'Application submitted successfully!')
+
+        return redirect('jobs:job_detail_view', pk=job.pk)
+    return render(request, 'jobs/job_apply.html', {'job': job})
+
 
 class JobUpdateView(UpdateView):
     form_class = JobForm
@@ -82,17 +107,3 @@ class JobDeleteView(DeleteView):
         if not user.is_authenticated:
             raise PermissionError("You do not have permission to delete this job.")
         return job
-
-def job_apply(request, pk):
-    job = get_object_or_404(Job, pk=pk)
-    if request.method == 'POST':
-        if not request.user.is_authenticated:
-            return render(request, 'auth/401.html', status=401)
-        resume = request.FILES.get('resume')
-        if not resume:
-            messages.error(request, 'Please upload your resume.')
-            return render(request, 'jobs/job_apply.html', {'job': job})
-        JobApplicant.objects.create(job=job, user=request.user, resume=resume)
-        messages.success(request, 'Application submitted successfully!')
-        return redirect('jobs:job_detail_view', pk=job.pk)
-    return render(request, 'jobs/job_apply.html', {'job': job})

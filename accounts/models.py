@@ -3,15 +3,18 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 import os
 import random
+
 def get_filename_ext(filepath):
     base_name = os.path.basename(filepath)
     name, ext = os.path.splitext(base_name)
     return name, ext
 
 def upload_image_path(instance, filename):
-    name, ext = os.path.splitext(filename)
-    new_filename = f"{random.randint(100000, 999999)}{ext}"
-    return f"profile_pictures/{instance.user.username}/{new_filename}"
+    new_filename = random.randint(1, 151251251)
+    name, ext = get_filename_ext(filename)
+    final_filename = '{new_filename}{ext}'.format(new_filename=new_filename, ext=ext)
+
+    return f"profile_pics/{new_filename}/{final_filename}".format(new_filename=new_filename, final_filename=final_filename)
 
 class UserManager(BaseUserManager):
     def create_user(self, email, username, password=None, is_active=True, is_staff=False, is_admin=False):
